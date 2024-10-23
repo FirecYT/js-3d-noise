@@ -1,6 +1,6 @@
 import { Block, BlockType } from "./Block";
 import { CHUNK_SIZE, MAP_HEIGHT, NOISE_COUNT } from "./config";
-import { bicubicRandXYZ, noise } from "./Randomizer";
+import { noise } from "./Randomizer";
 import Transform from "./Transform";
 import Vector3 from "./Vector3";
 
@@ -48,7 +48,6 @@ export default class Chunk {
 	}
 
 	private generateCaves() {
-		console.log(performance.now());
 		for (let block_x = 0; block_x < CHUNK_SIZE; block_x++) {
 			for (let block_z = 0; block_z < CHUNK_SIZE; block_z++) {
 				for (let block_y = 0; block_y < MAP_HEIGHT; block_y++) {
@@ -75,9 +74,5 @@ export default class Chunk {
 				}
 			}
 		}
-
-		console.log(performance.now());
-
-		debugger;
 	}
 }

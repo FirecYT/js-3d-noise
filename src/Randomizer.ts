@@ -6,17 +6,17 @@ console.log(SEED);
 
 // ===== noise =====
 
-const _randXYZCache = new Map<string, number>();
+// const _randXYZCache = new Map<string, number>();
 
-function _randXYZ(x: number, y: number, z: number): number {
-	const key = `${x}_${z}_${y}`;
+// function _randXYZ(x: number, y: number, z: number): number {
+// 	const key = `${x}_${z}_${y}`;
 
-	if (!_randXYZCache.has(key)) {
-		_randXYZCache.set(key, _randXYZ(x, z, y));
-	}
+// 	if (!_randXYZCache.has(key)) {
+// 		_randXYZCache.set(key, _randXYZ(x, z, y));
+// 	}
 
-	return _randXYZCache.get(key) as number;
-}
+// 	return _randXYZCache.get(key) as number;
+// }
 
 export function randXYZ(x: number, y: number, z: number): number {
 	let n = (x * 3418731287 + y * 132897987 + z * 1376312589 + SEED) >>> 0;
@@ -32,17 +32,17 @@ export function randXYZ(x: number, y: number, z: number): number {
 
 // ===== noise =====
 
-const _noiseCache = new Map<string, number>();
+// const _noiseCache = new Map<string, number>();
 
-function _noise(x: number, z: number, y: number, noise_count: number = NOISE_COUNT): number {
-	const key = `${x}_${z}_${y}_${noise_count}`;
+// function _noise(x: number, z: number, y: number, noise_count: number = NOISE_COUNT): number {
+// 	const key = `${x}_${z}_${y}_${noise_count}`;
 
-	if (!_noiseCache.has(key)) {
-		_noiseCache.set(key, _noise(x, z, y, noise_count));
-	}
+// 	if (!_noiseCache.has(key)) {
+// 		_noiseCache.set(key, _noise(x, z, y, noise_count));
+// 	}
 
-	return _noiseCache.get(key) as number;
-}
+// 	return _noiseCache.get(key) as number;
+// }
 
 export function noise(x: number, z: number, y: number, noise_count: number = NOISE_COUNT): number {
 	let result = 0;
@@ -62,17 +62,17 @@ export function noise(x: number, z: number, y: number, noise_count: number = NOI
 
 // ===== cubicInterpolate =====
 
-const _cubicInterpolateCache = new Map<string, number>();
+// const _cubicInterpolateCache = new Map<string, number>();
 
-function _cubicInterpolate(p0: number, p1: number, p2: number, p3: number, t: number): number {
-	const key = `${p0}_${p1}_${p2}_${p3}_${t}`;
+// function _cubicInterpolate(p0: number, p1: number, p2: number, p3: number, t: number): number {
+// 	const key = `${p0}_${p1}_${p2}_${p3}_${t}`;
 
-	if (!_cubicInterpolateCache.has(key)) {
-		_cubicInterpolateCache.set(key, _cubicInterpolate(p0, p1, p2, p3, t));
-	}
+// 	if (!_cubicInterpolateCache.has(key)) {
+// 		_cubicInterpolateCache.set(key, _cubicInterpolate(p0, p1, p2, p3, t));
+// 	}
 
-	return _cubicInterpolateCache.get(key) as number;
-}
+// 	return _cubicInterpolateCache.get(key) as number;
+// }
 
 function cubicInterpolate(p0: number, p1: number, p2: number, p3: number, t: number): number {
     const a = -0.5 * p0 + 1.5 * p1 - 1.5 * p2 + 0.5 * p3;
