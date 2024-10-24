@@ -29,7 +29,7 @@ export default class Game {
 	}
 
 	public draw() {
-		this.renderer.clearScreen(this.canvas.width, this.canvas.height);
+		this.renderer.clearScreen();
 
 		for (const chunk of this.chunks) {
 			for (let block_x = 0; block_x < CHUNK_SIZE; block_x++) {
@@ -38,7 +38,33 @@ export default class Game {
 
 						const block = chunk.data[block_x][block_z][block_y];
 
-						if (block.type !== BlockType.EMPTY) {
+						let opened = false;
+
+						if (block_x == 0 || block_y == 0 || block_z == 0) {
+							opened = true;
+						}
+
+						if (block_x == CHUNK_SIZE - 1 || block_y == MAP_HEIGHT - 1 || block_z == CHUNK_SIZE - 1) {
+							opened = true;
+						}
+
+						if (!opened) {
+							if (chunk.data[block_x + 1][block_z][block_y].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x - 1][block_z][block_y].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x][block_z + 1][block_y].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x][block_z - 1][block_y].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
+								opened = true;
+							}
+						}
+
+						if (opened && block.type === BlockType.SOLID) {
 							const transform = new Transform(
 								new Vector3(
 									chunk.transform.position.x + block_x,
@@ -47,18 +73,18 @@ export default class Game {
 								)
 							);
 
-							switch (block.type) {
-								case BlockType.SOLID:
-									this.renderer.changeColor(`rgb(
-										${Math.floor(255 * (block_y / MAP_HEIGHT))},
-										${Math.floor(255 * (block_y / MAP_HEIGHT))},
-										${Math.floor(255 * (block_y / MAP_HEIGHT))}
-									)`);
-									break;
-								case BlockType.CAVE:
-									this.renderer.changeColor(`rgba(0, 0, 0, 0.5)`);
-									break;
-							}
+							// switch (block.type) {
+							// 	case BlockType.SOLID:
+							// 		this.renderer.changeColor(`rgb(
+							// 			${Math.floor(255 * (block_y / MAP_HEIGHT))},
+							// 			${Math.floor(255 * (block_y / MAP_HEIGHT))},
+							// 			${Math.floor(255 * (block_y / MAP_HEIGHT))}
+							// 		)`);
+							// 		break;
+							// 	case BlockType.CAVE:
+							// 		this.renderer.changeColor(`rgba(0, 0, 0, 0.5)`);
+							// 		break;
+							// }
 
 							this.renderer.drawCube(transform);
 						}

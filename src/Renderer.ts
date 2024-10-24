@@ -1,103 +1,183 @@
-import { CHUNK_SIZE, MAP_HEIGHT, MAP_SIZE, SCALE } from "./config";
 import Transform from "./Transform";
-import Vector3 from "./Vector3";
+import * as glMatrix from './glMatrix/gl-matrix';
 
 export default class Renderer {
-	public transform: Transform;
-	private ctx: CanvasRenderingContext2D;
+	private gl: WebGLRenderingContext;
+
+	private vertexShader: WebGLShader;
+	private fragmentShader: WebGLShader;
+
+	private program: WebGLProgram;
+
+	public modelMatrix: any;
+	public perspectiveMatrix: any;
+
+	private positionAttribute: GLint;
+	private offsetUniform: WebGLUniformLocation;
+	private modelUniform: WebGLUniformLocation;
+	private perspectiveUniform: WebGLUniformLocation;
 
 	constructor(canvas: HTMLCanvasElement) {
-		this.transform = new Transform(
-			new Vector3(MAP_SIZE / 2 * CHUNK_SIZE, MAP_HEIGHT, MAP_SIZE / 2 * CHUNK_SIZE),
-			new Vector3(40 * Math.PI / 180, 45 * Math.PI / 180, 0)
-		);
-		this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+		this.gl = canvas.getContext('webgl') as WebGLRenderingContext;
 
-		this.ctx.translate(canvas.width / 2, canvas.height / 2);
-		this.ctx.scale(SCALE, SCALE);
-		this.ctx.lineWidth = 1 / SCALE;
-		this.ctx.strokeStyle = `rgba(0, 0, 0, 1)`;
+		this.vertexShader = this.createShader(this.gl.VERTEX_SHADER, `
+			attribute vec4 a_position;
+
+			uniform vec3 u_offset;
+
+			uniform mat4 u_model_matrix;
+			uniform mat4 u_perspective_matrix;
+
+			varying vec4 v_position;
+
+			void main() {
+				gl_Position = u_perspective_matrix * u_model_matrix * (a_position + vec4(u_offset, 0));
+
+				v_position = a_position;
+			}
+		`);
+		this.fragmentShader = this.createShader(this.gl.FRAGMENT_SHADER, `
+			precision mediump float;
+
+			varying vec4 v_position;
+
+			void main() {
+				float factor = 1.2 - 1. / length(v_position);
+				gl_FragColor = vec4(vec3(1, 0, 0.5) * factor, 1);
+			}
+		`);
+
+		this.program = this.createProgram(this.vertexShader, this.fragmentShader);
+
+		this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+
+		this.modelMatrix = glMatrix.mat4.create();
+		this.perspectiveMatrix = glMatrix.mat4.create();
+
+		glMatrix.mat4.perspective(this.perspectiveMatrix, 1.04, this.gl.canvas.width / this.gl.canvas.height, 0.1, 1000.0);
+
+		glMatrix.mat4.identity(this.modelMatrix);
+
+		glMatrix.mat4.translate(this.modelMatrix, this.modelMatrix, [0, -64, 0]);
+		glMatrix.mat4.rotate(this.modelMatrix, this.modelMatrix, Math.PI / 4 + Math.PI / 2, [0, 1, 0]);
+
+		const cube = getCube();
+
+		this.gl.useProgram(this.program);
+
+		const verticesBuffer = this.gl.createBuffer() as WebGLBuffer;
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, verticesBuffer);
+		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(cube.vertices), this.gl.STATIC_DRAW);
+
+		const indicesBuffer = this.gl.createBuffer() as WebGLBuffer;
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+		this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cube.indices), this.gl.STATIC_DRAW);
+
+		this.positionAttribute = this.gl.getAttribLocation(this.program, 'a_position');
+		this.offsetUniform = this.gl.getUniformLocation(this.program, 'u_offset') as WebGLUniformLocation;
+		this.modelUniform = this.gl.getUniformLocation(this.program, 'u_model_matrix') as WebGLUniformLocation;
+		this.perspectiveUniform = this.gl.getUniformLocation(this.program, 'u_perspective_matrix') as WebGLUniformLocation;
+
+		this.gl.enableVertexAttribArray(this.positionAttribute);
+		this.gl.vertexAttribPointer(this.positionAttribute, 3, this.gl.FLOAT, false, 0, 0);
 	}
 
 	changeColor(color: string | CanvasGradient | CanvasPattern) {
-		this.ctx.fillStyle = color;
+		//
 	}
 
 	drawCube(transform: Transform) {
-		// const coords = this.isometricCoord(transform.position.x, -transform.position.y, transform.position.z);
-		this._drawCube(
-			transform.position.x - this.transform.position.x,
-			transform.position.y - this.transform.position.y,
-			transform.position.z - this.transform.position.z
-		);
-		// this.ctx.fillRect(transform.position.x, transform.position.z, 1, 1);
+		const cube = getCube();
+
+		this.gl.uniform3fv(this.offsetUniform, [transform.position.x - 32, transform.position.y, transform.position.z - 32]);
+		this.gl.uniformMatrix4fv(this.modelUniform, false, this.modelMatrix);
+		this.gl.uniformMatrix4fv(this.perspectiveUniform, false, this.perspectiveMatrix);
+
+		this.gl.enable(this.gl.DEPTH_TEST);
+
+		this.gl.drawElements(this.gl.TRIANGLES, cube.indices.length, this.gl.UNSIGNED_SHORT, 0);
 	}
 
-	clearScreen(width: number, height: number) {
-		this.changeColor('#444');
-        this.ctx.fillRect(-width / 2, -height / 2, width, height);
+	clearScreen() {
+		this.gl.clearColor(0, 0, 0, 1);
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 	}
 
-	isometricCoord(x: number, y: number, z: number) {
-		const alpha_angle = this.transform.angle.x;
-		const beta_angle  = this.transform.angle.y;
+	private createShader(type: number, source: string): WebGLShader {
+		const shader = this.gl.createShader(type) as WebGLShader;
 
-		const isometric_matrix = [
-			[ Math.cos(beta_angle),                          0,                     -Math.sin(beta_angle)                         ],
-			[ Math.sin(alpha_angle) * Math.sin(beta_angle),  Math.cos(alpha_angle),  Math.sin(alpha_angle) * Math.cos(beta_angle) ],
-			[ Math.cos(alpha_angle) * Math.sin(beta_angle), -Math.sin(alpha_angle),  Math.cos(alpha_angle) * Math.cos(beta_angle) ]
-		];
+		this.gl.shaderSource(shader, source);
+		this.gl.compileShader(shader);
 
-		return {
-			x: isometric_matrix[0][0] * x + isometric_matrix[0][1] * y + isometric_matrix[0][2] * z,
-			y: isometric_matrix[1][0] * x + isometric_matrix[1][1] * y + isometric_matrix[1][2] * z,
+		const success = this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS);
+
+		if (success) {
+			return shader as WebGLShader;
 		}
+
+		console.log(this.gl.getShaderInfoLog(shader));
+		this.gl.deleteShader(shader);
+
+		throw new Error("Ошибка при инициализации шейдера");
 	}
 
-	private _drawCube(x: number, y: number, z: number) {
-		this.ctx.beginPath();
+	private createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
+		const program = this.gl.createProgram() as WebGLProgram;
 
-		let coord = this.isometricCoord(x + 0, -y + 0, z + 0);
-		this.ctx.moveTo(coord.x, coord.y);
+		this.gl.attachShader(program, vertexShader);
+		this.gl.attachShader(program, fragmentShader);
 
-		coord = this.isometricCoord(x + 1, -y + 0, z + 0);
-		this.ctx.lineTo(coord.x, coord.y);
+		this.gl.linkProgram(program);
 
-		coord = this.isometricCoord(x + 1, -y + 1, z + 0);
-		this.ctx.lineTo(coord.x, coord.y);
+		const success = this.gl.getProgramParameter(program, this.gl.LINK_STATUS);
 
-		coord = this.isometricCoord(x + 1, -y + 1, z + 1);
-		this.ctx.lineTo(coord.x, coord.y);
+		if (success) {
+			return program;
+		}
 
-		coord = this.isometricCoord(x + 0, -y + 1, z + 1);
-		this.ctx.lineTo(coord.x, coord.y);
+		console.log(this.gl.getProgramInfoLog(program));
+		this.gl.deleteProgram(program);
 
-		coord = this.isometricCoord(x + 0, -y + 0, z + 1);
-		this.ctx.lineTo(coord.x, coord.y);
-
-		this.ctx.fill();
-		this.ctx.closePath();
-
-		coord = this.isometricCoord(x + 0, -y + 0, z + 0);
-		this.ctx.moveTo(coord.x, coord.y);
-
-		coord = this.isometricCoord(x + 1, -y + 0, z + 0);
-		this.ctx.lineTo(coord.x, coord.y);
-
-		coord = this.isometricCoord(x + 1, -y + 0, z + 1);
-		this.ctx.lineTo(coord.x, coord.y);
-
-		coord = this.isometricCoord(x + 0, -y + 0, z + 1);
-		this.ctx.lineTo(coord.x, coord.y);
-
-		coord = this.isometricCoord(x + 1, -y + 0, z + 1);
-		this.ctx.moveTo(coord.x, coord.y);
-
-		coord = this.isometricCoord(x + 1, -y + 1, z + 1);
-		this.ctx.lineTo(coord.x, coord.y);
-
-		this.ctx.closePath();
-		this.ctx.stroke();
+		throw new Error("Ошибка при инициализации программы");
 	}
 }
 
+function getCube() {
+	const vertices = [
+		// лицевая часть
+		-0.5, -0.5, 0.5,
+		-0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		0.5, -0.5, 0.5,
+		// задняя часть
+		-0.5, -0.5, -0.5,
+		-0.5, 0.5, -0.5,
+		0.5, 0.5, -0.5,
+		0.5, -0.5, -0.5
+	];
+
+	const indices = [ // лицевая часть
+		0, 1, 2,
+		2, 3, 0,
+		//нижняя часть
+		0, 4, 7,
+		7, 3, 0,
+		// левая боковая часть
+		0, 1, 5,
+		5, 4, 0,
+		// правая боковая часть
+		2, 3, 7,
+		7, 6, 2,
+		// верхняя часть
+		2, 1, 6,
+		6, 5, 1,
+		// задняя часть
+		4, 5, 6,
+		6, 7, 4,
+	];
+
+	return {
+		vertices,
+		indices
+	};
+}
