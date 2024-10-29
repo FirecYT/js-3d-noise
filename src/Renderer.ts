@@ -80,6 +80,9 @@ export default class Renderer {
 
 		this.gl.enableVertexAttribArray(this.positionAttribute);
 		this.gl.vertexAttribPointer(this.positionAttribute, 3, this.gl.FLOAT, false, 0, 0);
+
+		this.gl.enable(this.gl.DEPTH_TEST);
+		this.gl.enable(this.gl.CULL_FACE);
 	}
 
 	changeColor(color: string | CanvasGradient | CanvasPattern) {
@@ -89,11 +92,9 @@ export default class Renderer {
 	drawCube(transform: Transform) {
 		const cube = getCube();
 
-		this.gl.uniform3fv(this.offsetUniform, [transform.position.x - 32, transform.position.y, transform.position.z - 32]);
+		this.gl.uniform3fv(this.offsetUniform, [transform.position.x, transform.position.y, transform.position.z]);
 		this.gl.uniformMatrix4fv(this.modelUniform, false, this.modelMatrix);
 		this.gl.uniformMatrix4fv(this.perspectiveUniform, false, this.perspectiveMatrix);
-
-		this.gl.enable(this.gl.DEPTH_TEST);
 
 		this.gl.drawElements(this.gl.TRIANGLES, cube.indices.length, this.gl.UNSIGNED_SHORT, 0);
 	}
@@ -156,22 +157,23 @@ function getCube() {
 		0.5, -0.5, -0.5
 	];
 
-	const indices = [ // лицевая часть
-		0, 1, 2,
-		2, 3, 0,
-		//нижняя часть
+	const indices = [
+		// лицевая часть
+		2, 1, 0,
+		0, 3, 2,
+		// //нижняя часть
 		0, 4, 7,
 		7, 3, 0,
-		// левая боковая часть
+		// // левая боковая часть
 		0, 1, 5,
 		5, 4, 0,
-		// правая боковая часть
+		// // правая боковая часть
 		2, 3, 7,
 		7, 6, 2,
-		// верхняя часть
-		2, 1, 6,
+		// // верхняя часть
+		6, 1, 2,
 		6, 5, 1,
-		// задняя часть
+		// // задняя часть
 		4, 5, 6,
 		6, 7, 4,
 	];
