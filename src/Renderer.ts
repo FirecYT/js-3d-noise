@@ -29,10 +29,12 @@ export default class Renderer {
 			uniform mat4 u_perspective_matrix;
 
 			varying vec4 v_position;
+			varying float v_distance;
 
 			void main() {
 				gl_Position = u_perspective_matrix * u_model_matrix * (a_position + vec4(u_offset, 0));
 
+				v_distance = length(gl_Position);
 				v_position = a_position;
 			}
 		`);
@@ -40,10 +42,12 @@ export default class Renderer {
 			precision mediump float;
 
 			varying vec4 v_position;
+			varying float v_distance;
 
 			void main() {
-				float factor = 1.2 - 1. / length(v_position);
-				gl_FragColor = vec4(vec3(1, 0, 0.5) * factor, 1);
+				float factor_2 = v_distance / 20.;
+				float factor = 1.4 - length(v_position);
+				gl_FragColor = vec4(vec3(1, 0, 0.5) * factor / factor_2, 1);
 			}
 		`);
 
@@ -54,7 +58,7 @@ export default class Renderer {
 		this.modelMatrix = glMatrix.mat4.create();
 		this.perspectiveMatrix = glMatrix.mat4.create();
 
-		glMatrix.mat4.perspective(this.perspectiveMatrix, 1.04, this.gl.canvas.width / this.gl.canvas.height, 0.1, 1000.0);
+		glMatrix.mat4.perspective(this.perspectiveMatrix, 1.04, this.gl.canvas.width / this.gl.canvas.height, 0.1, 100.0);
 
 		glMatrix.mat4.identity(this.modelMatrix);
 

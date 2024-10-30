@@ -23,7 +23,7 @@ export default class Game {
 		this.chunks = this.generateChunks();
 		this.keyboard = new Keyboard();
 
-		this.camera = new Transform(new Vector3(-MAP_SIZE * CHUNK_SIZE / 2, -MAP_HEIGHT, -MAP_SIZE * CHUNK_SIZE / 2));
+		this.camera = new Transform(new Vector3(-MAP_SIZE * CHUNK_SIZE / 2, -MAP_HEIGHT, -MAP_SIZE * CHUNK_SIZE / 2 - 32));
 
 		this.canvas.addEventListener("click", () => {
 			this.canvas.requestPointerLock();
