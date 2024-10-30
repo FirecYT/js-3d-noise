@@ -32,8 +32,9 @@ function tick() {
 	game.renderer.modelMatrix = glMatrix.mat4.create();
 	glMatrix.mat4.identity(game.renderer.modelMatrix);
 
-	glMatrix.mat4.translate(game.renderer.modelMatrix, game.renderer.modelMatrix, [0, -MAP_HEIGHT, 0]);
+	glMatrix.mat4.rotate(game.renderer.modelMatrix, game.renderer.modelMatrix, Math.PI / 3, [1, 0, 0]);
 	glMatrix.mat4.rotate(game.renderer.modelMatrix, game.renderer.modelMatrix, (+new Date()) / 10000, [0, 1, 0]);
+	glMatrix.mat4.translate(game.renderer.modelMatrix, game.renderer.modelMatrix, [0, -MAP_HEIGHT * 2, 0]);
 	glMatrix.mat4.translate(game.renderer.modelMatrix, game.renderer.modelMatrix, [-MAP_SIZE * CHUNK_SIZE / 2, 0, -MAP_SIZE * CHUNK_SIZE / 2]);
 
 	game.draw();

@@ -38,31 +38,31 @@ export default class Game {
 
 						const block = chunk.data[block_x][block_z][block_y];
 
-						let opened = false;
+						let opened = true;
 
-						if (block_x == 0 || block_y == 0 || block_z == 0) {
-							opened = true;
-						}
+						// if (block_x == 0 || block_y == 0 || block_z == 0) {
+						// 	opened = true;
+						// }
 
-						if (block_x == CHUNK_SIZE - 1 || block_y == MAP_HEIGHT - 1 || block_z == CHUNK_SIZE - 1) {
-							opened = true;
-						}
+						// if (block_x == CHUNK_SIZE - 1 || block_y == MAP_HEIGHT - 1 || block_z == CHUNK_SIZE - 1) {
+						// 	opened = true;
+						// }
 
-						if (!opened) {
-							if (chunk.data[block_x + 1][block_z][block_y].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x - 1][block_z][block_y].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x][block_z + 1][block_y].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x][block_z - 1][block_y].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
-								opened = true;
-							}
-						}
+						// if (!opened) {
+						// 	if (chunk.data[block_x + 1][block_z][block_y].type != BlockType.SOLID) {
+						// 		opened = true;
+						// 	} else if (chunk.data[block_x - 1][block_z][block_y].type != BlockType.SOLID) {
+						// 		opened = true;
+						// 	} else if (chunk.data[block_x][block_z + 1][block_y].type != BlockType.SOLID) {
+						// 		opened = true;
+						// 	} else if (chunk.data[block_x][block_z - 1][block_y].type != BlockType.SOLID) {
+						// 		opened = true;
+						// 	} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
+						// 		opened = true;
+						// 	} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
+						// 		opened = true;
+						// 	}
+						// }
 
 						if (opened && block.type === BlockType.SOLID) {
 							const transform = new Transform(
