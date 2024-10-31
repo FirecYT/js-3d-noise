@@ -46,28 +46,28 @@ export default class Game {
 	}
 
 	public draw() {
-		if (this.keyboard.isKeyPressed("w")) {
+		if (this.keyboard.isKeyPressed("KeyW")) {
 			this.camera.position.x += Math.sin(-this.camera.angle.y) / 5;
 			this.camera.position.z += Math.cos(-this.camera.angle.y) / 5;
 		}
-		if (this.keyboard.isKeyPressed("s")) {
+		if (this.keyboard.isKeyPressed("KeyS")) {
 			this.camera.position.x -= Math.sin(-this.camera.angle.y) / 5;
 			this.camera.position.z -= Math.cos(-this.camera.angle.y) / 5;
 		}
 
-		if (this.keyboard.isKeyPressed("a")) {
+		if (this.keyboard.isKeyPressed("KeyA")) {
 			this.camera.position.x += Math.sin(-this.camera.angle.y + Math.PI / 2) / 5;
 			this.camera.position.z += Math.cos(-this.camera.angle.y + Math.PI / 2) / 5;
 		}
-		if (this.keyboard.isKeyPressed("d")) {
+		if (this.keyboard.isKeyPressed("KeyD")) {
 			this.camera.position.x -= Math.sin(-this.camera.angle.y + Math.PI / 2) / 5;
 			this.camera.position.z -= Math.cos(-this.camera.angle.y + Math.PI / 2) / 5;
 		}
 
-		if (this.keyboard.isKeyPressed("Shift")) {
+		if (this.keyboard.isKeyPressed("ShiftLeft")) {
 			this.camera.position.y += 0.2;
 		}
-		if (this.keyboard.isKeyPressed(" ")) {
+		if (this.keyboard.isKeyPressed("Space")) {
 			this.camera.position.y -= 0.2;
 		}
 
@@ -91,31 +91,31 @@ export default class Game {
 
 						const block = chunk.data[block_x][block_z][block_y];
 
-						let opened = true;
+						let opened = false;
 
-						// if (block_x == 0 || block_y == 0 || block_z == 0) {
-						// 	opened = true;
-						// }
+						if (block_x == 0 || block_y == 0 || block_z == 0) {
+							opened = true;
+						}
 
-						// if (block_x == CHUNK_SIZE - 1 || block_y == MAP_HEIGHT - 1 || block_z == CHUNK_SIZE - 1) {
-						// 	opened = true;
-						// }
+						if (block_x == CHUNK_SIZE - 1 || block_y == MAP_HEIGHT - 1 || block_z == CHUNK_SIZE - 1) {
+							opened = true;
+						}
 
-						// if (!opened) {
-						// 	if (chunk.data[block_x + 1][block_z][block_y].type != BlockType.SOLID) {
-						// 		opened = true;
-						// 	} else if (chunk.data[block_x - 1][block_z][block_y].type != BlockType.SOLID) {
-						// 		opened = true;
-						// 	} else if (chunk.data[block_x][block_z + 1][block_y].type != BlockType.SOLID) {
-						// 		opened = true;
-						// 	} else if (chunk.data[block_x][block_z - 1][block_y].type != BlockType.SOLID) {
-						// 		opened = true;
-						// 	} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
-						// 		opened = true;
-						// 	} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
-						// 		opened = true;
-						// 	}
-						// }
+						if (!opened) {
+							if (chunk.data[block_x + 1][block_z][block_y].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x - 1][block_z][block_y].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x][block_z + 1][block_y].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x][block_z - 1][block_y].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
+								opened = true;
+							} else if (chunk.data[block_x][block_z][block_y - 1].type != BlockType.SOLID) {
+								opened = true;
+							}
+						}
 
 						if (opened && block.type === BlockType.SOLID) {
 							const transform = new Transform(

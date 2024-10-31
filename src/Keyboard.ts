@@ -6,12 +6,12 @@ export default class Keyboard {
 
 		// Инициализация событий нажатия клавиш
 		document.addEventListener('keydown', (event) => {
-			this.keys.add(event.key);
+			this.keys.add(event.code);
 		});
 
 		// Инициализация событий отпускания клавиш
 		document.addEventListener('keyup', (event) => {
-			this.keys.delete(event.key);
+			this.keys.delete(event.code);
 		});
 	}
 

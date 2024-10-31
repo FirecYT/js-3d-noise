@@ -18,7 +18,10 @@ export default class Renderer {
 	private perspectiveUniform: WebGLUniformLocation;
 
 	constructor(canvas: HTMLCanvasElement) {
-		this.gl = canvas.getContext('webgl') as WebGLRenderingContext;
+		this.gl = canvas.getContext('webgl', {
+			desynchronized: true,
+			preserveDrawingBuffer: true
+		}) as WebGLRenderingContext;
 
 		this.vertexShader = this.createShader(this.gl.VERTEX_SHADER, `
 			attribute vec4 a_position;
