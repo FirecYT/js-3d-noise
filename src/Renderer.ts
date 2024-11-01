@@ -48,9 +48,9 @@ export default class Renderer {
 			varying float v_distance;
 
 			void main() {
-				float factor_2 = v_distance / 20.;
+				float factor_2 = 1. - v_distance / 75.;
 				float factor = 1.4 - length(v_position);
-				gl_FragColor = vec4(vec3(1, 0, 0.5) * factor / factor_2, 1);
+				gl_FragColor = vec4(vec3(1, 0, 0.5) * factor * factor_2, 1);
 			}
 		`);
 

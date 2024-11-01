@@ -71,6 +71,8 @@ export default class Game {
 			this.camera.position.y -= 0.2;
 		}
 
+		this.camera.position.y = Math.min(this.camera.position.y, -1);
+
 		this.renderer.clearScreen();
 
 		this.renderer.modelMatrix = glMatrix.mat4.create();
@@ -85,62 +87,74 @@ export default class Game {
 		]);
 
 		for (const chunk of this.chunks) {
-			for (let block_x = 0; block_x < CHUNK_SIZE; block_x++) {
-				for (let block_z = 0; block_z < CHUNK_SIZE; block_z++) {
-					for (let block_y = 0; block_y < MAP_HEIGHT; block_y++) {
+			for (const block of chunk.data) {
+				let opened = false;
 
-						const block = chunk.data[block_x][block_z][block_y];
+				if (
+					block.transform.position.x == 0 ||
+					block.transform.position.y == 0 ||
+					block.transform.position.z == 0
+				) {
+					opened = true;
+				}
 
-						let opened = false;
+				if (
+					block.transform.position.x == CHUNK_SIZE - 1 ||
+					block.transform.position.y == MAP_HEIGHT - 1 ||
+					block.transform.position.z == CHUNK_SIZE - 1
+				) {
+					opened = true;
+				}
 
-						if (block_x == 0 || block_y == 0 || block_z == 0) {
-							opened = true;
-						}
+				if (!opened) {
+					const index = block.transform.position.x +
+					              block.transform.position.z * CHUNK_SIZE +
+					              block.transform.position.y * CHUNK_SIZE * CHUNK_SIZE;
 
-						if (block_x == CHUNK_SIZE - 1 || block_y == MAP_HEIGHT - 1 || block_z == CHUNK_SIZE - 1) {
-							opened = true;
-						}
+					if (chunk.data[index + 1].type != BlockType.SOLID) {
+						opened = true;
+					} else if (chunk.data[index - 1].type != BlockType.SOLID) {
+						opened = true;
+					} else if (chunk.data[index + CHUNK_SIZE].type != BlockType.SOLID) {
+						opened = true;
+					} else if (chunk.data[index - CHUNK_SIZE].type != BlockType.SOLID) {
+						opened = true;
+					} else if (chunk.data[index + CHUNK_SIZE * CHUNK_SIZE].type != BlockType.SOLID) {
+						opened = true;
+					} else if (chunk.data[index - CHUNK_SIZE * CHUNK_SIZE].type != BlockType.SOLID) {
+						opened = true;
+					}
+				}
 
-						if (!opened) {
-							if (chunk.data[block_x + 1][block_z][block_y].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x - 1][block_z][block_y].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x][block_z + 1][block_y].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x][block_z - 1][block_y].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x][block_z][block_y + 1].type != BlockType.SOLID) {
-								opened = true;
-							} else if (chunk.data[block_x][block_z][block_y - 1].type != BlockType.SOLID) {
-								opened = true;
-							}
-						}
+				if (opened && block.type === BlockType.SOLID) {
+					const transform = new Transform(
+						new Vector3(
+							chunk.transform.position.x + block.transform.position.x,
+							block.transform.position.y,
+							chunk.transform.position.z + block.transform.position.z
+						)
+					);
 
-						if (opened && block.type === BlockType.SOLID) {
-							const transform = new Transform(
-								new Vector3(
-									chunk.transform.position.x + block_x,
-									block_y,
-									chunk.transform.position.z + block_z
-								)
-							);
+					// switch (block.type) {
+					// 	case BlockType.SOLID:
+					// 		this.renderer.changeColor(`rgb(
+					// 			${Math.floor(255 * (block.transform.position.y / MAP_HEIGHT))},
+					// 			${Math.floor(255 * (block.transform.position.y / MAP_HEIGHT))},
+					// 			${Math.floor(255 * (block.transform.position.y / MAP_HEIGHT))}
+					// 		)`);
+					// 		break;
+					// 	case BlockType.CAVE:
+					// 		this.renderer.changeColor(`rgba(0, 0, 0, 0.5)`);
+					// 		break;
+					// }
 
-							// switch (block.type) {
-							// 	case BlockType.SOLID:
-							// 		this.renderer.changeColor(`rgb(
-							// 			${Math.floor(255 * (block_y / MAP_HEIGHT))},
-							// 			${Math.floor(255 * (block_y / MAP_HEIGHT))},
-							// 			${Math.floor(255 * (block_y / MAP_HEIGHT))}
-							// 		)`);
-							// 		break;
-							// 	case BlockType.CAVE:
-							// 		this.renderer.changeColor(`rgba(0, 0, 0, 0.5)`);
-							// 		break;
-							// }
-
-							this.renderer.drawCube(transform);
-						}
+					if (
+						Math.sqrt(
+							Math.pow(transform.position.x + this.camera.position.x, 2) +
+							Math.pow(transform.position.z + this.camera.position.z, 2)
+						) < 50
+					) {
+						this.renderer.drawCube(transform);
 					}
 				}
 			}

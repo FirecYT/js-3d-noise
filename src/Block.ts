@@ -1,3 +1,5 @@
+import Transform from "./Transform";
+
 export enum BlockType {
 	EMPTY,
 	SOLID,
@@ -6,8 +8,10 @@ export enum BlockType {
 
 export class Block {
 	public type: BlockType;
+	public transform: Transform;
 
-	constructor(type: BlockType) {
+	constructor(type: BlockType, transform: Transform) {
 		this.type = type;
+		this.transform = transform;
 	}
 }
