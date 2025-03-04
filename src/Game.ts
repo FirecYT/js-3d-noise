@@ -87,77 +87,7 @@ export default class Game {
 		]);
 
 		for (const chunk of this.chunks) {
-			for (const block of chunk.data) {
-				let opened = false;
-
-				if (
-					block.transform.position.x == 0 ||
-					block.transform.position.y == 0 ||
-					block.transform.position.z == 0
-				) {
-					opened = true;
-				}
-
-				if (
-					block.transform.position.x == CHUNK_SIZE - 1 ||
-					block.transform.position.y == MAP_HEIGHT - 1 ||
-					block.transform.position.z == CHUNK_SIZE - 1
-				) {
-					opened = true;
-				}
-
-				if (!opened) {
-					const index = block.transform.position.x +
-					              block.transform.position.z * CHUNK_SIZE +
-					              block.transform.position.y * CHUNK_SIZE * CHUNK_SIZE;
-
-					if (chunk.data[index + 1].type != BlockType.SOLID) {
-						opened = true;
-					} else if (chunk.data[index - 1].type != BlockType.SOLID) {
-						opened = true;
-					} else if (chunk.data[index + CHUNK_SIZE].type != BlockType.SOLID) {
-						opened = true;
-					} else if (chunk.data[index - CHUNK_SIZE].type != BlockType.SOLID) {
-						opened = true;
-					} else if (chunk.data[index + CHUNK_SIZE * CHUNK_SIZE].type != BlockType.SOLID) {
-						opened = true;
-					} else if (chunk.data[index - CHUNK_SIZE * CHUNK_SIZE].type != BlockType.SOLID) {
-						opened = true;
-					}
-				}
-
-				if (opened && block.type === BlockType.SOLID) {
-					const transform = new Transform(
-						new Vector3(
-							chunk.transform.position.x + block.transform.position.x,
-							block.transform.position.y,
-							chunk.transform.position.z + block.transform.position.z
-						)
-					);
-
-					// switch (block.type) {
-					// 	case BlockType.SOLID:
-					// 		this.renderer.changeColor(`rgb(
-					// 			${Math.floor(255 * (block.transform.position.y / MAP_HEIGHT))},
-					// 			${Math.floor(255 * (block.transform.position.y / MAP_HEIGHT))},
-					// 			${Math.floor(255 * (block.transform.position.y / MAP_HEIGHT))}
-					// 		)`);
-					// 		break;
-					// 	case BlockType.CAVE:
-					// 		this.renderer.changeColor(`rgba(0, 0, 0, 0.5)`);
-					// 		break;
-					// }
-
-					if (
-						Math.sqrt(
-							Math.pow(transform.position.x + this.camera.position.x, 2) +
-							Math.pow(transform.position.z + this.camera.position.z, 2)
-						) < 50
-					) {
-						this.renderer.drawCube(transform);
-					}
-				}
-			}
+			this.renderer.drawCube(chunk.transform, chunk.mash);
 		}
 	}
 }

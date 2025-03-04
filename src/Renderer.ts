@@ -1,3 +1,5 @@
+import { Block } from "./Block";
+import Mash from "./Mash";
 import Transform from "./Transform";
 import * as glMatrix from './glMatrix/gl-matrix';
 
@@ -16,6 +18,11 @@ export default class Renderer {
 	private offsetUniform: WebGLUniformLocation;
 	private modelUniform: WebGLUniformLocation;
 	private perspectiveUniform: WebGLUniformLocation;
+
+	private known: {[key: string]: {
+		verticesBuffer: WebGLBuffer,
+		indicesBuffer: WebGLBuffer
+	}} = {};
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.gl = canvas.getContext('webgl', {
@@ -49,8 +56,8 @@ export default class Renderer {
 
 			void main() {
 				float factor_2 = 1. - v_distance / 75.;
-				float factor = 1.4 - length(v_position);
-				gl_FragColor = vec4(vec3(1, 0, 0.5) * factor * factor_2, 1);
+				// float factor = 1.4 - length(v_position);
+				gl_FragColor = vec4(vec3(1, 0, 0.5) * factor_2, 1);
 			}
 		`);
 
@@ -68,25 +75,12 @@ export default class Renderer {
 		glMatrix.mat4.translate(this.modelMatrix, this.modelMatrix, [0, -64, 0]);
 		glMatrix.mat4.rotate(this.modelMatrix, this.modelMatrix, Math.PI / 4 + Math.PI / 2, [0, 1, 0]);
 
-		const cube = getCube();
-
 		this.gl.useProgram(this.program);
-
-		const verticesBuffer = this.gl.createBuffer() as WebGLBuffer;
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, verticesBuffer);
-		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(cube.vertices), this.gl.STATIC_DRAW);
-
-		const indicesBuffer = this.gl.createBuffer() as WebGLBuffer;
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
-		this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cube.indices), this.gl.STATIC_DRAW);
 
 		this.positionAttribute = this.gl.getAttribLocation(this.program, 'a_position');
 		this.offsetUniform = this.gl.getUniformLocation(this.program, 'u_offset') as WebGLUniformLocation;
 		this.modelUniform = this.gl.getUniformLocation(this.program, 'u_model_matrix') as WebGLUniformLocation;
 		this.perspectiveUniform = this.gl.getUniformLocation(this.program, 'u_perspective_matrix') as WebGLUniformLocation;
-
-		this.gl.enableVertexAttribArray(this.positionAttribute);
-		this.gl.vertexAttribPointer(this.positionAttribute, 3, this.gl.FLOAT, false, 0, 0);
 
 		this.gl.enable(this.gl.DEPTH_TEST);
 		this.gl.enable(this.gl.CULL_FACE);
@@ -96,14 +90,33 @@ export default class Renderer {
 		//
 	}
 
-	drawCube(transform: Transform) {
-		const cube = getCube();
+	drawCube(transform: Transform, mash: Mash) {
+		if (!this.known[mash.toString()]) {
+			const verticesBuffer = this.gl.createBuffer() as WebGLBuffer;
+			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, verticesBuffer);
+			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(mash.vertices), this.gl.STATIC_DRAW);
+
+			const indicesBuffer = this.gl.createBuffer() as WebGLBuffer;
+			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mash.indices), this.gl.STATIC_DRAW);
+
+			this.known[mash.toString()] = {verticesBuffer, indicesBuffer};
+
+			console.log(this.known);
+
+		}
 
 		this.gl.uniform3fv(this.offsetUniform, [transform.position.x, transform.position.y, transform.position.z]);
 		this.gl.uniformMatrix4fv(this.modelUniform, false, this.modelMatrix);
 		this.gl.uniformMatrix4fv(this.perspectiveUniform, false, this.perspectiveMatrix);
 
-		this.gl.drawElements(this.gl.TRIANGLES, cube.indices.length, this.gl.UNSIGNED_SHORT, 0);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.known[mash.toString()].verticesBuffer);
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.known[mash.toString()].indicesBuffer);
+
+		this.gl.enableVertexAttribArray(this.positionAttribute);
+		this.gl.vertexAttribPointer(this.positionAttribute, 3, this.gl.FLOAT, false, 0, 0);
+
+		this.gl.drawElements(this.gl.TRIANGLES, mash.indices.length, this.gl.UNSIGNED_SHORT, 0);
 	}
 
 	clearScreen() {
@@ -148,45 +161,4 @@ export default class Renderer {
 
 		throw new Error("Ошибка при инициализации программы");
 	}
-}
-
-function getCube() {
-	const vertices = [
-		// лицевая часть
-		-0.5, -0.5, 0.5,
-		-0.5, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		0.5, -0.5, 0.5,
-		// задняя часть
-		-0.5, -0.5, -0.5,
-		-0.5, 0.5, -0.5,
-		0.5, 0.5, -0.5,
-		0.5, -0.5, -0.5
-	];
-
-	const indices = [
-		// лицевая часть
-		2, 1, 0,
-		0, 3, 2,
-		// //нижняя часть
-		0, 4, 7,
-		7, 3, 0,
-		// // левая боковая часть
-		0, 1, 5,
-		5, 4, 0,
-		// // правая боковая часть
-		2, 3, 7,
-		7, 6, 2,
-		// // верхняя часть
-		6, 1, 2,
-		6, 5, 1,
-		// // задняя часть
-		4, 5, 6,
-		6, 7, 4,
-	];
-
-	return {
-		vertices,
-		indices
-	};
 }
