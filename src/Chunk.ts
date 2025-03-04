@@ -174,11 +174,7 @@ export default class Chunk {
 		let offset = 0;
 
 		for(const block of this.data) {
-			if (block.mash.indices.length) {
-				mash.indices.push(...block.mash.indices.map((el) => {
-					return el + offset * 128;
-				}));
-
+			if (block.mash.indices.length && block.type === BlockType.SOLID) {
 				mash.vertices.push(...block.mash.vertices.map((value, index) => {
 					if (index % 3 === 0) {
 						return value + block.transform.position.x;
@@ -188,9 +184,13 @@ export default class Chunk {
 						return value + block.transform.position.z;
 					}
 				}));
-			}
 
-			offset++;
+				mash.indices.push(...block.mash.indices.map((el) => {
+					return el + offset * 8;
+				}));
+
+				offset++;
+			}
 		}
 
 		return mash;

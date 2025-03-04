@@ -39,7 +39,7 @@
 		NOISE_COUNT: <span id="NOISE_COUNT"></span><br>
 	</div>
 	<canvas id="canvas" width="512" height="512"></canvas>
-	<script src="build/index.js"></script>
+	<script src="storage/build/index.js"></script>
 </body>
 
 </html>

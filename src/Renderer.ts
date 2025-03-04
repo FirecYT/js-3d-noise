@@ -55,9 +55,21 @@ export default class Renderer {
 			varying float v_distance;
 
 			void main() {
-				float factor_2 = 1. - v_distance / 75.;
-				// float factor = 1.4 - length(v_position);
-				gl_FragColor = vec4(vec3(1, 0, 0.5) * factor_2, 1);
+				float factor = 1. - v_distance / 75.;
+
+				vec3 coord = v_position.xyz;
+				vec3 moded = mod(coord, 1.);
+
+				float _max = max(moded.x, moded.y);
+				_max = max(_max, moded.z);
+
+				float _color = .5;
+
+				if (abs(_max - .5) > 0.25) {
+					_color *= 2.;
+				}
+
+				gl_FragColor = vec4(vec3(_color), 1.);
 			}
 		`);
 
@@ -101,17 +113,14 @@ export default class Renderer {
 			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mash.indices), this.gl.STATIC_DRAW);
 
 			this.known[mash.toString()] = {verticesBuffer, indicesBuffer};
-
-			console.log(this.known);
-
 		}
+
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.known[mash.toString()].verticesBuffer);
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.known[mash.toString()].indicesBuffer);
 
 		this.gl.uniform3fv(this.offsetUniform, [transform.position.x, transform.position.y, transform.position.z]);
 		this.gl.uniformMatrix4fv(this.modelUniform, false, this.modelMatrix);
 		this.gl.uniformMatrix4fv(this.perspectiveUniform, false, this.perspectiveMatrix);
-
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.known[mash.toString()].verticesBuffer);
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.known[mash.toString()].indicesBuffer);
 
 		this.gl.enableVertexAttribArray(this.positionAttribute);
 		this.gl.vertexAttribPointer(this.positionAttribute, 3, this.gl.FLOAT, false, 0, 0);
