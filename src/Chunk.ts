@@ -162,37 +162,76 @@ export default class Chunk {
 			return true;
 		}
 
-		if (x != this.data[index].transform.position.x || z != this.data[index].transform.position.z || y != this.data[index].transform.position.y) {
-			debugger;
-		}
-
 		return this.data[index]?.type != BlockType.SOLID;
 	}
 
 	private mergeMashes(): Mash {
 		const mash = new Mash();
-		let offset = 0;
+		const vertexMap = new Map<string, number>(); // Карта для хранения уникальных вершин
 
-		for(const block of this.data) {
+		for (const block of this.data) {
 			if (block.mash.indices.length && block.type === BlockType.SOLID) {
-				mash.vertices.push(...block.mash.vertices.map((value, index) => {
-					if (index % 3 === 0) {
-						return value + block.transform.position.x;
-					} else if (index % 3 === 1) {
-						return value + block.transform.position.y;
-					} else {
-						return value + block.transform.position.z;
+				for (let i = 0; i < block.mash.vertices.length; i += 3) {
+					const vertex = [
+						block.mash.vertices[i] + block.transform.position.x,
+						block.mash.vertices[i + 1] + block.transform.position.y,
+						block.mash.vertices[i + 2] + block.transform.position.z
+					];
+
+					const vertexKey = vertex.join(','); // Создание уникального ключа для вершины
+
+					if (!vertexMap.has(vertexKey)) {
+						// Если вершина ещё не добавлена, добавляем её и запоминаем индекс
+						const newIndex = mash.vertices.length / 3;
+						mash.vertices.push(...vertex);
+						vertexMap.set(vertexKey, newIndex);
 					}
-				}));
+				}
 
-				mash.indices.push(...block.mash.indices.map((el) => {
-					return el + offset * 8;
-				}));
-
-				offset++;
+				// Обновляем индексы, используя уже добавленные вершины
+				block.mash.indices.forEach((el) => {
+					// Получаем первичный индекс из векторного массива
+					const vertexIndex = vertexMap.get(
+						(block.mash.vertices[el * 3] + block.transform.position.x) + ',' +
+						(block.mash.vertices[el * 3 + 1] + block.transform.position.y) + ',' +
+						(block.mash.vertices[el * 3 + 2] + block.transform.position.z)
+					);
+					if (vertexIndex !== undefined) {
+						mash.indices.push(vertexIndex); // Просто добавляем индекс без учета смещения
+					}
+				});
 			}
 		}
 
-		return mash;
+		// Оптимизация: удаление лишних вершин и индексов
+		return this.optimizeMesh(mash);
+	}
+
+	private optimizeMesh(mash: Mash): Mash {
+		const optimizedMash = new Mash();
+		const vertexMap = new Map<string, number>();
+
+		// Сначала будем хранить новые вершины
+		for (let i = 0; i < mash.vertices.length; i += 3) {
+			const vertex = mash.vertices.slice(i, i + 3);
+			const vertexKey = vertex.join(',');
+
+			if (!vertexMap.has(vertexKey)) {
+				const newIndex = optimizedMash.vertices.length / 3;
+				optimizedMash.vertices.push(...vertex);
+				vertexMap.set(vertexKey, newIndex);
+			}
+		}
+
+		// Создаем новые индексы для упрощенного меша
+		mash.indices.forEach((index) => {
+			const vertexKey = mash.vertices.slice(index * 3, index * 3 + 3).join(',');
+			const mappedIndex = vertexMap.get(vertexKey);
+			if (mappedIndex !== undefined) {
+				optimizedMash.indices.push(mappedIndex);
+			}
+		});
+
+		return optimizedMash;
 	}
 }

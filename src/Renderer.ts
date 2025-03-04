@@ -1,4 +1,3 @@
-import { Block } from "./Block";
 import Mash from "./Mash";
 import Transform from "./Transform";
 import * as glMatrix from './glMatrix/gl-matrix';
@@ -58,18 +57,23 @@ export default class Renderer {
 				float factor = 1. - v_distance / 75.;
 
 				vec3 coord = v_position.xyz;
-				vec3 moded = mod(coord, 1.);
+				vec3 moded = fract(coord);
 
-				float _max = max(moded.x, moded.y);
-				_max = max(_max, moded.z);
+				float _color = .125;
 
-				float _color = .5;
-
-				if (abs(_max - .5) > 0.25) {
+				if (moded.x < 0.1 || moded.x > 0.9) {
 					_color *= 2.;
 				}
 
-				gl_FragColor = vec4(vec3(_color), 1.);
+				if (moded.y < 0.1 || moded.y > 0.9) {
+					_color *= 2.;
+				}
+
+				if (moded.z < 0.1 || moded.z > 0.9) {
+					_color *= 2.;
+				}
+
+				gl_FragColor = vec4(vec3(_color) * factor, 1.);
 			}
 		`);
 
@@ -96,10 +100,6 @@ export default class Renderer {
 
 		this.gl.enable(this.gl.DEPTH_TEST);
 		this.gl.enable(this.gl.CULL_FACE);
-	}
-
-	changeColor(color: string | CanvasGradient | CanvasPattern) {
-		//
 	}
 
 	drawCube(transform: Transform, mash: Mash) {
