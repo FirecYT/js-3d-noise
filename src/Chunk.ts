@@ -138,6 +138,8 @@ export default class Chunk {
 							7, 3, 0,
 						]);
 					}
+
+					this.data[index].mash.updateHash();
 				}
 			}
 		}
@@ -231,6 +233,8 @@ export default class Chunk {
 				optimizedMash.indices.push(mappedIndex);
 			}
 		});
+
+		optimizedMash.updateHash();
 
 		return optimizedMash;
 	}

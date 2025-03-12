@@ -26,7 +26,8 @@ export default class Renderer {
 	constructor(canvas: HTMLCanvasElement) {
 		this.gl = canvas.getContext('webgl', {
 			desynchronized: true,
-			preserveDrawingBuffer: true
+			preserveDrawingBuffer: true,
+			antialias: true
 		}) as WebGLRenderingContext;
 
 		this.vertexShader = this.createShader(this.gl.VERTEX_SHADER, `
@@ -54,26 +55,32 @@ export default class Renderer {
 			varying float v_distance;
 
 			void main() {
-				float factor = 1. - v_distance / 75.;
+				float factor = 1. - v_distance / 575.;
 
 				vec3 coord = v_position.xyz;
 				vec3 moded = fract(coord);
 
-				float _color = .125;
+				int bounded_count = 0;
 
-				if (moded.x < 0.1 || moded.x > 0.9) {
-					_color *= 2.;
+				if (abs(moded.x - .5) * 2. > .95) {
+					bounded_count += 1;
 				}
 
-				if (moded.y < 0.1 || moded.y > 0.9) {
-					_color *= 2.;
+				if (abs(moded.y - .5) * 2. > .95) {
+					bounded_count += 1;
 				}
 
-				if (moded.z < 0.1 || moded.z > 0.9) {
-					_color *= 2.;
+				if (abs(moded.z - .5) * 2. > .95) {
+					bounded_count += 1;
 				}
 
-				gl_FragColor = vec4(vec3(_color) * factor, 1.);
+				float _color = 0.125;
+
+				if (bounded_count >= 2) {
+					_color = 1.0;
+				}
+
+				gl_FragColor = vec4(vec3(.125, _color, .125) * factor, 1.);
 			}
 		`);
 
@@ -84,7 +91,7 @@ export default class Renderer {
 		this.modelMatrix = glMatrix.mat4.create();
 		this.perspectiveMatrix = glMatrix.mat4.create();
 
-		glMatrix.mat4.perspective(this.perspectiveMatrix, 1.04, this.gl.canvas.width / this.gl.canvas.height, 0.1, 100.0);
+		glMatrix.mat4.perspective(this.perspectiveMatrix, 1.04, this.gl.canvas.width / this.gl.canvas.height, 0.1, 500.0);
 
 		glMatrix.mat4.identity(this.modelMatrix);
 
@@ -100,10 +107,12 @@ export default class Renderer {
 
 		this.gl.enable(this.gl.DEPTH_TEST);
 		this.gl.enable(this.gl.CULL_FACE);
+		this.gl.enable(this.gl.BLEND);
+		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 	}
 
 	drawCube(transform: Transform, mash: Mash) {
-		if (!this.known[mash.toString()]) {
+		if (!this.known[mash.hash]) {
 			const verticesBuffer = this.gl.createBuffer() as WebGLBuffer;
 			this.gl.bindBuffer(this.gl.ARRAY_BUFFER, verticesBuffer);
 			this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(mash.vertices), this.gl.STATIC_DRAW);
@@ -112,11 +121,11 @@ export default class Renderer {
 			this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
 			this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mash.indices), this.gl.STATIC_DRAW);
 
-			this.known[mash.toString()] = {verticesBuffer, indicesBuffer};
+			this.known[mash.hash] = {verticesBuffer, indicesBuffer};
 		}
 
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.known[mash.toString()].verticesBuffer);
-		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.known[mash.toString()].indicesBuffer);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.known[mash.hash].verticesBuffer);
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.known[mash.hash].indicesBuffer);
 
 		this.gl.uniform3fv(this.offsetUniform, [transform.position.x, transform.position.y, transform.position.z]);
 		this.gl.uniformMatrix4fv(this.modelUniform, false, this.modelMatrix);
