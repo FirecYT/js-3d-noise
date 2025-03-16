@@ -1,5 +1,5 @@
 import { Block, BlockType } from "./Block";
-import { CHUNK_SIZE, MAP_HEIGHT, NOISE_COUNT } from "./config";
+import { MAP_HEIGHT, NOISE_COUNT } from "./config";
 import Mash from "./Mash";
 import { noise } from "./Randomizer";
 import Transform from "./Transform";
@@ -11,7 +11,7 @@ export default class Chunk {
 	public mash: Mash;
 
 	constructor(x: number, z: number) {
-		this.transform = new Transform(new Vector3(x * CHUNK_SIZE, 0, z * CHUNK_SIZE));
+		this.transform = new Transform(new Vector3(x << 4, 0, (z << 4)));
 		this.data = this.initializeData();
 		this.generateLandscape();
 		this.generateCaves();
@@ -21,14 +21,14 @@ export default class Chunk {
 
 	private initializeData(): Block[] {
 		const data: Block[] = [];
-		for (let i = 0; i < CHUNK_SIZE * CHUNK_SIZE * MAP_HEIGHT; i++) {
+		for (let i = 0; i < (MAP_HEIGHT << 8); i++) {
 			data[i] = new Block(
 				BlockType.EMPTY,
 				new Transform(
 					new Vector3(
-						i % CHUNK_SIZE,
-						((i / CHUNK_SIZE / CHUNK_SIZE) << 0) % MAP_HEIGHT,
-						((i / CHUNK_SIZE) << 0) % CHUNK_SIZE,
+						i & 15,
+						((i >> 8) << 0) % MAP_HEIGHT,
+						((i >> 4) << 0) & 15,
 					)
 				)
 			);
@@ -37,8 +37,8 @@ export default class Chunk {
 	}
 
 	private generateLandscape() {
-		for (let x = 0; x < CHUNK_SIZE; x++) {
-			for (let z = 0; z < CHUNK_SIZE; z++) {
+		for (let x = 0; x < 16; x++) {
+			for (let z = 0; z < 16; z++) {
 				const random = noise(
 					this.transform.position.x + x,
 					this.transform.position.z + z,
@@ -48,23 +48,23 @@ export default class Chunk {
 				const height = Math.floor(random * MAP_HEIGHT / 2 + MAP_HEIGHT / 2);
 
 				for (let y = 0; y < height; y++) {
-					this.data[x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE].type = BlockType.SOLID;
+					this.data[x + (z << 4) + (y << 8)].type = BlockType.SOLID;
 				}
 			}
 		}
 	}
 
 	private generateCaves() {
-		for (let block_x = 0; block_x < CHUNK_SIZE; block_x++) {
-			for (let block_z = 0; block_z < CHUNK_SIZE; block_z++) {
-				for (let block_y = 0; block_y < MAP_HEIGHT; block_y++) {
-					const index = block_x + block_z * CHUNK_SIZE + block_y * CHUNK_SIZE * CHUNK_SIZE;
+		for (let block_x = 0; block_x < 16; block_x++) {
+			for (let block_z = 0; block_z < 16; block_z++) {
+				for (let block_y = 0; block_y < 16; block_y++) {
+					const index = block_x + (block_z << 4) + (block_y << 8);
 
 					const random = noise(
 						this.transform.position.x + block_x,
 						this.transform.position.z + block_z,
 						block_y,
-						NOISE_COUNT / 4
+						NOISE_COUNT
 					);
 
 					let fact = 1;
@@ -73,11 +73,11 @@ export default class Chunk {
 						fact = Math.max(0, block_y / 8)
 					}
 
-					if (block_y > MAP_HEIGHT / 2) {
-						fact = Math.max(0, 1 - (block_y - MAP_HEIGHT / 2) / (MAP_HEIGHT / 2))
-					}
+					// if (block_y > MAP_HEIGHT / 2) {
+					// 	fact = Math.max(0, 1 - (block_y - MAP_HEIGHT / 2) / (MAP_HEIGHT / 2))
+					// }
 
-					if (this.data[index].type != BlockType.EMPTY && random ** 2 < 0.15 * fact) {
+					if (this.data[index].type != BlockType.EMPTY && random < 0.35 * fact) {
 						this.data[index].type = BlockType.CAVE;
 					}
 				}
@@ -85,11 +85,11 @@ export default class Chunk {
 		}
 	}
 
-	private generateMashes() {
-		for (let block_x = 0; block_x < CHUNK_SIZE; block_x++) {
-			for (let block_z = 0; block_z < CHUNK_SIZE; block_z++) {
+	public generateMashes() {
+		for (let block_x = 0; block_x < 16; block_x++) {
+			for (let block_z = 0; block_z < 16; block_z++) {
 				for (let block_y = 0; block_y < MAP_HEIGHT; block_y++) {
-					const index = block_x + block_z * CHUNK_SIZE + block_y * CHUNK_SIZE * CHUNK_SIZE;
+					const index = block_x + (block_z << 4) + (block_y << 8);
 
 					if (this.testBlock(block_x, block_y, block_z + 1)) {
 						this.data[index].mash.indices.push(...[
@@ -146,17 +146,17 @@ export default class Chunk {
 	}
 
 	private testBlock(x: number, y: number, z: number): boolean {
-		const index = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+		const index = x + (z << 4) + (y << 8);
 
 		if (x < 0 || y < 0 || z < 0) {
 			return true;
 		}
 
-		if (x >= CHUNK_SIZE) {
+		if (x >= 16) {
 			return true;
 		}
 
-		if (z >= CHUNK_SIZE) {
+		if (z >= 16) {
 			return true;
 		}
 
@@ -167,7 +167,7 @@ export default class Chunk {
 		return this.data[index]?.type != BlockType.SOLID;
 	}
 
-	private mergeMashes(): Mash {
+	public mergeMashes(): Mash {
 		const mash = new Mash();
 		const vertexMap = new Map<string, number>(); // Карта для хранения уникальных вершин
 

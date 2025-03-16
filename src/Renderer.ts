@@ -2,6 +2,11 @@ import Mash from "./Mash";
 import Transform from "./Transform";
 import * as glMatrix from './glMatrix/gl-matrix';
 
+interface KnownBuffers {
+	verticesBuffer: WebGLBuffer,
+	indicesBuffer: WebGLBuffer
+}
+
 export default class Renderer {
 	private gl: WebGLRenderingContext;
 
@@ -18,10 +23,7 @@ export default class Renderer {
 	private modelUniform: WebGLUniformLocation;
 	private perspectiveUniform: WebGLUniformLocation;
 
-	private known: {[key: string]: {
-		verticesBuffer: WebGLBuffer,
-		indicesBuffer: WebGLBuffer
-	}} = {};
+	private known: {[key: string]: KnownBuffers} = {};
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.gl = canvas.getContext('webgl', {
@@ -55,7 +57,7 @@ export default class Renderer {
 			varying float v_distance;
 
 			void main() {
-				float factor = 1. - v_distance / 575.;
+				float factor = 1. - v_distance / 175.;
 
 				vec3 coord = v_position.xyz;
 				vec3 moded = fract(coord);
@@ -91,7 +93,7 @@ export default class Renderer {
 		this.modelMatrix = glMatrix.mat4.create();
 		this.perspectiveMatrix = glMatrix.mat4.create();
 
-		glMatrix.mat4.perspective(this.perspectiveMatrix, 1.04, this.gl.canvas.width / this.gl.canvas.height, 0.1, 500.0);
+		glMatrix.mat4.perspective(this.perspectiveMatrix, 1.04, this.gl.canvas.width / this.gl.canvas.height, 0.1, 100.0);
 
 		glMatrix.mat4.identity(this.modelMatrix);
 
@@ -109,6 +111,12 @@ export default class Renderer {
 		this.gl.enable(this.gl.CULL_FACE);
 		this.gl.enable(this.gl.BLEND);
 		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+	}
+
+	unloadMash(mash: Mash) {
+		if (this.known[mash.hash]) {
+			delete this.known[mash.hash];
+		}
 	}
 
 	drawCube(transform: Transform, mash: Mash) {
