@@ -85,6 +85,7 @@ export default class Game {
 		for (let x = 0; x < MAP_SIZE; x++) {
 			for (let z = 0; z < MAP_SIZE; z++) {
 				chunks.set(`${x}_${z}`, new Chunk(x, z));
+				console.log(`${x * MAP_SIZE + z} / ${MAP_SIZE * MAP_SIZE}`);
 			}
 		}
 		return chunks;

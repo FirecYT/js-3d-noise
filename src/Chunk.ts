@@ -42,7 +42,7 @@ export default class Chunk {
 				const random = noise(
 					this.transform.position.x + x,
 					this.transform.position.z + z,
-					0
+					22
 				);
 
 				const height = Math.floor(random * MAP_HEIGHT / 2 + MAP_HEIGHT / 2);
@@ -64,7 +64,7 @@ export default class Chunk {
 						this.transform.position.x + block_x,
 						this.transform.position.z + block_z,
 						block_y,
-						NOISE_COUNT
+						NOISE_COUNT / 4
 					);
 
 					let fact = 1;
@@ -77,7 +77,7 @@ export default class Chunk {
 					// 	fact = Math.max(0, 1 - (block_y - MAP_HEIGHT / 2) / (MAP_HEIGHT / 2))
 					// }
 
-					if (this.data[index].type != BlockType.EMPTY && random < 0.35 * fact) {
+					if (this.data[index].type != BlockType.EMPTY && random < 0.5 * fact) {
 						this.data[index].type = BlockType.CAVE;
 					}
 				}
